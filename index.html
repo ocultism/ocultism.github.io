@@ -103,15 +103,56 @@ nav a:focus-visible,nav button:focus-visible{outline:1px solid #fff;outline-offs
     else{ds.textContent=t;setTimeout(function(){ds.textContent='discord'},2500)}
   });
 
-  /* ник собирается из шума */
-  function scramble(el){
-    var txt=el.dataset.text, chars='▒░#*+/\\<>01', t0=performance.now(), dur=1400;
-    (function tick(now){
-      var p=Math.min(1,(now-t0)/dur), out='';
-      for(var i=0;i<txt.length;i++){out+=(p*txt.length*1.5>i)?txt[i]:chars[Math.random()*chars.length|0]}
-      el.textContent=out;
-      if(p<1)requestAnimationFrame(tick);else el.textContent=txt;
-    })(t0);
+  /* full-width URL glitch */
+  var urlBase = location.pathname;
+  var urlTarget = Array(10).fill('cultist').join('_');
+  var urlChars = '▒░#*+/\\<>01';
+
+  function setUrl(value){
+    try {
+      history.replaceState(null, '', urlBase + '#' + value);
+    } catch(e){}
+  }
+
+  function scrambleUrl(){
+    var start = performance.now();
+    var duration = 1800;
+    var last = 0;
+
+    function tick(now){
+      var p = Math.min(1, (now - start) / duration);
+
+      if(now - last >= 80 || p === 1){
+        var revealed = Math.floor(p * urlTarget.length);
+        var output = '';
+
+        for(var i = 0; i < urlTarget.length; i++){
+          output += i < revealed
+            ? urlTarget[i]
+            : urlChars[Math.random() * urlChars.length | 0];
+        }
+
+        setUrl(output);
+        last = now;
+      }
+
+      if(p < 1){
+        requestAnimationFrame(tick);
+      } else {
+        setUrl(urlTarget);
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  function startUrlAnimation(){
+    function cycle(){
+      scrambleUrl();
+      setTimeout(cycle, 4800);
+    }
+
+    cycle();
   }
 
   function enter(e){
@@ -123,6 +164,7 @@ nav a:focus-visible,nav button:focus-visible{outline:1px solid #fff;outline-offs
     var p=bg.play();
     if(p&&p.then){p.then(function(){setSnd(true)}).catch(function(){bg.muted=true;bg.play().catch(function(){});setSnd(false)})}
     if(!reduce){name.textContent='';setTimeout(function(){scramble(name)},700)}
+    setTimeout(startUrlAnimation,700);
   }
   gate.addEventListener('click',enter,{once:true});
 
